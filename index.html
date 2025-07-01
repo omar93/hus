@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <title>Bostadslånekalkylator</title>
+  <style>
+    :root {
+      --primary: #0066cc;
+      --accent: #e0f0ff;
+      --light-bg: #f9f9f9;
+      --border: #ccc;
+      --danger: #d32f2f;
+      --warning: #f9a825;
+      --success: #388e3c;
+    }
+
+    body {
+      font-family: "Segoe UI", sans-serif;
+      max-width: 700px;
+      margin: auto;
+      padding: 2rem;
+      background: white;
+      color: #333;
+    }
+
+    h1 {
+      color: var(--primary);
+    }
+
+    .field-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      position: relative;
+    }
+
+    label {
+      font-weight: 600;
+      margin-top: 1rem;
+      display: block;
+    }
+
+    input[type="number"] {
+      flex: 1;
+      padding: 0.6rem;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      box-sizing: border-box;
+    }
+
+    .save-btn {
+      padding: 0.5rem 0.7rem;
+      border: none;
+      background: var(--primary);
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 0px;
+      position: absolute;
+      margin-left: 101%;
+    }
+
+    button {
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.7rem 1.5rem;
+      font-size: 1rem;
+      cursor: pointer;
+      border-radius: 5px;
+      margin-top: 1rem;
+    }
+
+    .result {
+      margin-top: 1rem;
+      background: var(--light-bg);
+      padding: 1.5rem;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.6rem;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: bold;
+      color: white;
+      margin-left: 0.5rem;
+    }
+
+    .danger { background: var(--danger); }
+    .warning { background: var(--warning); }
+    .success { background: var(--success); }
+
+    .info-group {
+      margin-bottom: 1rem;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 1rem;
+      }
+
+      .field-group {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .save-btn {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Bostadslånekalkylator</h1>
+
+  <label for="income1">Omars lön (kr/mån):</label>
+  <div class="field-group">
+    <input type="number" id="income1" placeholder="t.ex. 46800">
+    <button class="save-btn" onclick="saveValue('income1')">Spara</button>
+  </div>
+
+  <label for="income2">Süreyyas lön (kr/mån):</label>
+  <div class="field-group">
+    <input type="number" id="income2" placeholder="t.ex. 32000">
+    <button class="save-btn" onclick="saveValue('income2')">Spara</button>
+  </div>
+
+  <label for="interestRate">Ränta (%):</label>
+  <input type="number" id="interestRate" value="4">
+
+  <label for="customDownPayment">Egen kontantinsats (kr, valfritt):</label>
+  <input type="number" id="customDownPayment" placeholder="t.ex. 300000">
+
+  <label for="monthlyFee">Bostadsrättsavgift (kr/mån, valfritt):</label>
+  <input type="number" id="monthlyFee" placeholder="t.ex. 4500">
+
+  <label for="customPrice">Bostadens pris (kr, valfritt):</label>
+  <input type="number" id="customPrice" placeholder="t.ex. 3500000">
+
+  <button onclick="calculate()">Beräkna</button>
+
+  <div class="result" id="result" style="display:none;">
+    <div class="info-group"><strong>Maximalt lån:</strong> <span id="maxLoan"></span> kr</div>
+    <div class="info-group"><strong>Bostadspris:</strong> <span id="maxPrice"></span> kr</div>
+    <div class="info-group"><strong>Kontantinsats:</strong> <span id="downPayment"></span> kr</div>
+    <div class="info-group"><strong>Lånets storlek:</strong> <span id="actualLoan"></span> kr</div>
+
+    <div class="info-group">
+      <strong>Belåningsgrad:</strong> <span id="belaningsgrad"></span> %
+      <span id="belaningsBadge" class="badge"></span>
+    </div>
+    <div class="info-group">
+      <strong>Skuldkvot:</strong> <span id="skuldkvot"></span> %
+      <span id="skuldkvotBadge" class="badge"></span>
+    </div>
+    <div class="info-group">
+      <strong>Amorteringskrav:</strong> <span id="amortering"></span> %
+    </div>
+    <div class="info-group">
+      <strong>Räntekostnad/mån:</strong> <span id="interestCost"></span> kr
+    </div>
+    <div class="info-group">
+      <strong>Amortering/mån:</strong> <span id="amorteringKr"></span> kr
+    </div>
+    <div class="info-group">
+      <strong>Bostadsrättsavgift:</strong> <span id="avgift"></span> kr
+    </div>
+    <div class="info-group">
+      <strong>Total månadskostnad:</strong> <span id="totalMonthly"></span> kr
+    </div>
+  </div>
+
+  <script>
+    function formatKr(value) {
+      return new Intl.NumberFormat("sv-SE").format(Math.round(value));
+    }
+
+    function saveValue(id) {
+      const value = document.getElementById(id).value;
+      localStorage.setItem(id, value);
+      alert("Värdet sparat!");
+    }
+
+    function loadSavedValues() {
+      const savedIncome1 = localStorage.getItem("income1") || "46800";
+      const savedIncome2 = localStorage.getItem("income2") || "";
+      document.getElementById("income1").value = savedIncome1;
+      document.getElementById("income2").value = savedIncome2;
+    }
+
+    function calculate() {
+      const income1 = parseFloat(document.getElementById('income1').value) || 0;
+      const income2 = parseFloat(document.getElementById('income2').value) || 0;
+      const rate = parseFloat(document.getElementById('interestRate').value) || 4;
+      const userDownPayment = parseFloat(document.getElementById('customDownPayment').value);
+      const brfAvgift = parseFloat(document.getElementById('monthlyFee').value) || 0;
+      const customPrice = parseFloat(document.getElementById('customPrice').value);
+
+      const totalIncomeMonthly = income1 + income2;
+      const totalIncomeYearly = totalIncomeMonthly * 12;
+      const maxLoan = totalIncomeYearly * 5;
+
+      let price, downPayment;
+      if (!isNaN(customPrice)) {
+        price = customPrice;
+        downPayment = !isNaN(userDownPayment) ? userDownPayment : price * 0.15;
+      } else {
+        downPayment = !isNaN(userDownPayment) ? userDownPayment : null;
+        price = downPayment ? maxLoan + downPayment : maxLoan / 0.85;
+        if (!downPayment) downPayment = price * 0.15;
+      }
+
+      const loan = price - downPayment;
+      const belaningsgrad = loan / price;
+      const skuldkvot = loan / totalIncomeYearly;
+
+      let amortering = 0;
+      if (belaningsgrad > 0.7) amortering += 2;
+      else if (belaningsgrad > 0.5) amortering += 1;
+      if (skuldkvot > 4.5) amortering += 1;
+
+      const interestCost = (loan * (rate / 100)) / 12;
+      const amorteringKr = (loan * (amortering / 100)) / 12;
+      const totalMonthly = interestCost + amorteringKr + brfAvgift;
+
+      document.getElementById('maxLoan').textContent = formatKr(maxLoan);
+      document.getElementById('maxPrice').textContent = formatKr(price);
+      document.getElementById('downPayment').textContent = formatKr(downPayment);
+      document.getElementById('actualLoan').textContent = formatKr(loan);
+      document.getElementById('belaningsgrad').textContent = (belaningsgrad * 100).toFixed(1);
+      document.getElementById('skuldkvot').textContent = (skuldkvot * 100).toFixed(1);
+      document.getElementById('amortering').textContent = amortering;
+      document.getElementById('interestCost').textContent = formatKr(interestCost);
+      document.getElementById('amorteringKr').textContent = formatKr(amorteringKr);
+      document.getElementById('avgift').textContent = formatKr(brfAvgift);
+      document.getElementById('totalMonthly').textContent = formatKr(totalMonthly);
+
+      // Badges
+      const belaningBadge = document.getElementById('belaningsBadge');
+      const skuldkvotBadge = document.getElementById('skuldkvotBadge');
+      belaningBadge.textContent =
+        belaningsgrad > 0.7 ? "Hög" :
+        belaningsgrad > 0.5 ? "Mellan" : "Låg";
+      belaningBadge.className = "badge " +
+        (belaningsgrad > 0.7 ? "danger" :
+         belaningsgrad > 0.5 ? "warning" : "success");
+
+      skuldkvotBadge.textContent = skuldkvot > 4.5 ? "Över 4.5x" : "OK";
+      skuldkvotBadge.className = "badge " + (skuldkvot > 4.5 ? "danger" : "success");
+
+      document.getElementById('result').style.display = 'block';
+    }
+
+    // Ladda sparade värden vid start
+    window.onload = loadSavedValues;
+  </script>
+</body>
+</html>
