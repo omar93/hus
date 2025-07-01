@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Bostadslånekalkylator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     :root {
       --primary: #0066cc;
@@ -14,69 +15,94 @@
       --success: #388e3c;
     }
 
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
     body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: var(--light-bg);
       font-family: "Segoe UI", sans-serif;
-      max-width: 700px;
-      margin: auto;
-      padding: 2rem;
-      background: white;
       color: #333;
+      padding: 1rem;
+    }
+
+    main {
+      background: white;
+      max-width: 700px;
+      width: 100%;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
     }
 
     h1 {
       color: var(--primary);
-    }
-
-    .field-group {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      position: relative;
+      font-size: 1.8rem;
+      margin-bottom: 1.5rem;
+      text-align: center;
     }
 
     label {
       font-weight: 600;
-      margin-top: 1rem;
+      margin-top: 1.5rem;
       display: block;
+      font-size: 1rem;
+    }
+
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
     }
 
     input[type="number"] {
-      flex: 1;
-      padding: 0.6rem;
+      padding: 0.8rem;
+      font-size: 1rem;
       border: 1px solid var(--border);
       border-radius: 5px;
       box-sizing: border-box;
     }
 
     .save-btn {
-      padding: 0.5rem 0.7rem;
-      border: none;
+      padding: 0.6rem 1rem;
+      font-size: 0.95rem;
       background: var(--primary);
       color: white;
+      border: none;
       border-radius: 5px;
       cursor: pointer;
-      margin-top: 0px;
-      position: absolute;
-      margin-left: 101%;
+      align-self: flex-start;
     }
 
     button {
       background-color: var(--primary);
       color: white;
       border: none;
-      padding: 0.7rem 1.5rem;
+      padding: 0.9rem 1.5rem;
       font-size: 1rem;
       cursor: pointer;
       border-radius: 5px;
-      margin-top: 1rem;
+      margin-top: 1.5rem;
+      width: 100%;
     }
 
     .result {
-      margin-top: 1rem;
+      margin-top: 2rem;
       background: var(--light-bg);
       padding: 1.5rem;
       border-radius: 10px;
       border: 1px solid var(--border);
+    }
+
+    .info-group {
+      margin-bottom: 1rem;
+      line-height: 1.6;
     }
 
     .badge {
@@ -93,85 +119,83 @@
     .warning { background: var(--warning); }
     .success { background: var(--success); }
 
-    .info-group {
-      margin-bottom: 1rem;
-    }
-
-    @media (max-width: 600px) {
-      body {
-        padding: 1rem;
-      }
-
+    @media (min-width: 600px) {
       .field-group {
-        flex-direction: column;
-        align-items: stretch;
+        flex-direction: row;
+        align-items: center;
       }
 
       .save-btn {
-        width: 100%;
+        margin-left: 1rem;
+      }
+
+      button {
+        width: auto;
       }
     }
   </style>
 </head>
 <body>
-  <h1>Bostadslånekalkylator</h1>
+  <main>
+    <h1>Bostadslånekalkylator</h1>
 
-  <label for="income1">Omars lön (kr/mån):</label>
-  <div class="field-group">
-    <input type="number" id="income1" placeholder="t.ex. 46800">
-    <button class="save-btn" onclick="saveValue('income1')">Spara</button>
-  </div>
-
-  <label for="income2">Süreyyas lön (kr/mån):</label>
-  <div class="field-group">
-    <input type="number" id="income2" placeholder="t.ex. 32000">
-    <button class="save-btn" onclick="saveValue('income2')">Spara</button>
-  </div>
-
-  <label for="interestRate">Ränta (%):</label>
-  <input type="number" id="interestRate" value="4">
-
-  <label for="customDownPayment">Egen kontantinsats (kr, valfritt):</label>
-  <input type="number" id="customDownPayment" placeholder="t.ex. 300000">
-
-  <label for="monthlyFee">Bostadsrättsavgift (kr/mån, valfritt):</label>
-  <input type="number" id="monthlyFee" placeholder="t.ex. 4500">
-
-  <label for="customPrice">Bostadens pris (kr, valfritt):</label>
-  <input type="number" id="customPrice" placeholder="t.ex. 3500000">
-
-  <button onclick="calculate()">Beräkna</button>
-
-  <div class="result" id="result" style="display:none;">
-    <div class="info-group"><strong>Maximalt lån:</strong> <span id="maxLoan"></span> kr</div>
-    <div class="info-group"><strong>Bostadspris:</strong> <span id="maxPrice"></span> kr</div>
-    <div class="info-group"><strong>Kontantinsats:</strong> <span id="downPayment"></span> kr</div>
-    <div class="info-group"><strong>Lånets storlek:</strong> <span id="actualLoan"></span> kr</div>
-
-    <div class="info-group">
-      <strong>Belåningsgrad:</strong> <span id="belaningsgrad"></span> %
-      <span id="belaningsBadge" class="badge"></span>
+    <label for="income1">Omars lön (kr/mån):</label>
+    <div class="field-group">
+      <input type="number" id="income1" placeholder="t.ex. 46800">
+      <button class="save-btn" onclick="saveValue('income1')">Spara</button>
     </div>
-    <div class="info-group">
-      <strong>Skuldkvot:</strong> <span id="skuldkvot"></span> %
-      <span id="skuldkvotBadge" class="badge"></span>
+
+    <label for="income2">Süreyyas lön (kr/mån):</label>
+    <div class="field-group">
+      <input type="number" id="income2" placeholder="t.ex. 32000">
+      <button class="save-btn" onclick="saveValue('income2')">Spara</button>
     </div>
-    <div class="info-group">
-      <strong>Amorteringskrav:</strong> <span id="amortering"></span> %
+
+    <label for="interestRate">Ränta (%):</label>
+    <input type="number" id="interestRate" value="4">
+
+    <label for="customDownPayment">Egen kontantinsats (kr, valfritt):</label>
+    <input type="number" id="customDownPayment" placeholder="t.ex. 300000">
+
+    <label for="monthlyFee">Bostadsrättsavgift (kr/mån, valfritt):</label>
+    <input type="number" id="monthlyFee" placeholder="t.ex. 4500">
+
+    <label for="customPrice">Bostadens pris (kr, valfritt):</label>
+    <input type="number" id="customPrice" placeholder="t.ex. 3500000">
+
+    <button onclick="calculate()">Beräkna</button>
+
+    <div class="result" id="result" style="display:none;">
+      <div class="info-group"><strong>Maximalt lån:</strong> <span id="maxLoan"></span> kr</div>
+      <div class="info-group"><strong>Bostadspris:</strong> <span id="maxPrice"></span> kr</div>
+      <div class="info-group"><strong>Kontantinsats:</strong> <span id="downPayment"></span> kr</div>
+      <div class="info-group"><strong>Lånets storlek:</strong> <span id="actualLoan"></span> kr</div>
+
+      <div class="info-group">
+        <strong>Belåningsgrad:</strong> <span id="belaningsgrad"></span> %
+        <span id="belaningsBadge" class="badge"></span>
+      </div>
+      <div class="info-group">
+        <strong>Skuldkvot:</strong> <span id="skuldkvot"></span> %
+        <span id="skuldkvotBadge" class="badge"></span>
+      </div>
+      <div class="info-group">
+        <strong>Amorteringskrav:</strong> <span id="amortering"></span> %
+      </div>
+      <div class="info-group">
+        <strong>Räntekostnad/mån:</strong> <span id="interestCost"></span> kr
+      </div>
+      <div class="info-group">
+        <strong>Amortering/mån:</strong> <span id="amorteringKr"></span> kr
+      </div>
+      <div class="info-group">
+        <strong>Bostadsrättsavgift:</strong> <span id="avgift"></span> kr
+      </div>
+      <div class="info-group">
+        <strong>Total månadskostnad:</strong> <span id="totalMonthly"></span> kr
+      </div>
     </div>
-    <div class="info-group">
-      <strong>Räntekostnad/mån:</strong> <span id="interestCost"></span> kr
-    </div>
-    <div class="info-group">
-      <strong>Amortering/mån:</strong> <span id="amorteringKr"></span> kr
-    </div>
-    <div class="info-group">
-      <strong>Bostadsrättsavgift:</strong> <span id="avgift"></span> kr
-    </div>
-    <div class="info-group">
-      <strong>Total månadskostnad:</strong> <span id="totalMonthly"></span> kr
-    </div>
-  </div>
+  </main>
 
   <script>
     function formatKr(value) {
@@ -254,7 +278,6 @@
       document.getElementById('result').style.display = 'block';
     }
 
-    // Ladda sparade värden vid start
     window.onload = loadSavedValues;
   </script>
 </body>
