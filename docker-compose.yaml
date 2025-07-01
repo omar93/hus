@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  kalkylator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bostadskalkyl
+    ports:
+      - "3007:3000"
+    volumes:
+      - ./data:/app/data        # Visitor log will be persisted here
+      - ./public:/app/public    # Optional: Live-edit HTML
+    restart: unless-stopped

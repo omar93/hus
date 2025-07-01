@@ -1,0 +1,24 @@
+{
+  "name": "hus",
+  "version": "1.0.0",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/omar93/hus.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/omar93/hus/issues"
+  },
+  "homepage": "https://github.com/omar93/hus#readme",
+  "description": "",
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}
