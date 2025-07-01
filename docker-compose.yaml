@@ -7,6 +7,12 @@ services:
     ports:
       - "3007:3000"
     volumes:
-      - ./data:/app/data            # Loggfiler
-      - ./public:/app/public        # HTML, JS, CSS mappning korrekt
+      - kalkylator_data:/app/data
+      - kalkylator_public:/app/public
     restart: unless-stopped
+
+volumes:
+  kalkylator_data:
+    external: true
+  kalkylator_public:
+    external: true
