@@ -1,448 +1,637 @@
 <!DOCTYPE html>
 <html lang="sv">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>KALP – Bostadsköp (Omar & Süreyya)</title>
-  <style>
-    :root{
-      --bg:#f6f8fc; --card:#ffffff; --ink:#1b1e28; --muted:#667085;
-      --accent:#3b82f6; --accent-2:#1d4ed8;
-      --good:#2e7d5b; --warn:#b37400; --bad:#c24141;
-      --table-border:#e5eaf5; --chip:#eef4ff; --chip-border:#cfe0ff;
-      --shadow:0 10px 30px rgba(15,23,42,.06);
-      --radius:14px; --radius-sm:10px; --input-h:44px;
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>KALP – Bostadsköp (Omar & Süreyya)</title>
+<style>
+  :root{
+    --bg:#f6f8fc; --card:#ffffff; --ink:#1b1e28; --muted:#667085;
+    --accent:#3b82f6; --accent-2:#1d4ed8;
+    --good:#2e7d5b; --warn:#b37400; --bad:#c24141;
+    --table-border:#e5eaf5; --chip:#eef4ff; --chip-border:#cfe0ff;
+    --shadow:0 10px 30px rgba(15,23,42,.06);
+    --radius:14px; --radius-sm:10px; --input-h:44px;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0; font-family:system-ui, Segoe UI, Roboto, Arial, sans-serif; background:var(--bg); color:var(--ink)}
+
+  /* Sticky action bar */
+  .topbar{position:sticky; top:0; z-index:10; background:linear-gradient(180deg,#fff 0%,rgba(255,255,255,.92) 100%); border-bottom:1px solid var(--table-border); backdrop-filter:saturate(150%) blur(6px)}
+  .topbar-inner{max-width:1024px; margin:0 auto; padding:10px 16px; display:flex; gap:10px; align-items:center}
+  .btn{appearance:none; border:none; cursor:pointer; height:var(--input-h); padding:0 14px; border-radius:12px; font-weight:600; background:var(--accent); color:#fff; box-shadow:0 6px 18px rgba(59,130,246,.25)}
+  .btn.secondary{background:#edf2ff; color:#0f172a; border:1px solid var(--chip-border); box-shadow:none}
+  .btn.ghost{background:transparent; border:1px dashed #cfd7ef; color:#0f172a}
+  .btn.icon{width:var(--input-h); padding:0; display:grid; place-items:center}
+  .btn.danger{background:#fff0f0; color:#9b1c1c; border:1px solid #f1c2c2; box-shadow:none}
+
+  .wrap{max-width:1024px; margin:22px auto; padding:0 16px;}
+  .header{background:var(--card); border:1px solid var(--table-border); border-radius:var(--radius); padding:18px; box-shadow:var(--shadow)}
+  .title{font-size:26px; font-weight:800; margin:.2rem 0 .4rem}
+  .subtitle{margin:0; color:var(--accent-2); font-weight:600}
+  .chips{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px}
+  .chip{background:var(--chip); border:1px solid var(--chip-border); color:#0f172a; padding:6px 10px; border-radius:999px; font-size:13px}
+
+  .grid{display:grid; gap:18px; grid-template-columns:1fr}
+  @media (min-width:980px){ .grid{grid-template-columns: 1.15fr .85fr;} }
+
+  .card{background:var(--card); border:1px solid var(--table-border); border-radius:var(--radius); padding:16px; box-shadow:var(--shadow)}
+  .card h2{margin:0 0 12px; font-size:18px}
+
+  .section{border:1px solid var(--table-border); border-radius:12px; padding:12px; background:#fff; margin-bottom:12px}
+  .section h3{margin:0 0 10px; font-size:14px; color:#0f172a}
+  .row{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+  .row + .row{margin-top:10px}
+
+  label{font-size:13px; color:var(--muted); display:block; margin:0 0 6px}
+  input[type="number"], input[type="text"]{width:100%; height:var(--input-h); padding:0 12px; font-size:14px; color:var(--ink); background:#f9fbff; border:1px solid #cfd7ef; border-radius:var(--radius-sm)}
+  input:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 2px rgba(59,130,246,.2)}
+
+  table{width:100%; border-collapse:separate; border-spacing:0; border:1px solid var(--table-border); border-radius:12px; overflow:hidden; margin-top:8px}
+  thead th{background:#eef3ff; color:#111; text-align:left; font-weight:700; padding:10px; font-size:13px; border-bottom:1px solid var(--table-border)}
+  tbody td{padding:8px 10px; border-bottom:1px solid var(--table-border); font-size:14px; vertical-align:middle}
+  tbody tr:nth-child(even){background:#fafcff}
+  .num{text-align:right; white-space:nowrap}
+  .tot{font-weight:800}
+  td input[type="text"]{height:38px}
+  td.num input[type="number"]{height:38px; text-align:right}
+  .cell-actions{display:flex; justify-content:flex-end}
+  .cell-actions .btn{height:34px; border-radius:10px}
+  .tfootbar{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px; border:1px solid var(--table-border); border-top:none; border-radius:0 0 12px 12px; background:#fff}
+
+  .good{color:var(--good); font-weight:700}
+  .warn{color:var(--warn); font-weight:700}
+  .bad {color:var(--bad);  font-weight:700}
+
+  /* --- AFFORDABILITY – GRID with header spanning 3 columns --- */
+  .afford.afford--grid{
+    margin-top:14px; border:1px solid var(--table-border); border-radius:16px; padding:16px;
+    background:#fff; display:grid; gap:16px; grid-template-columns:1fr 1fr 1fr;
+    box-shadow:var(--shadow);
+  }
+  .afford-bar{grid-column:1 / -1; display:flex; align-items:center; gap:12px; padding:10px 12px; background:#f7f9ff; border:1px solid #e6edff; border-radius:10px}
+  .badge{display:inline-flex; align-items:center; gap:8px; font-weight:800; padding:8px 12px; border-radius:999px; font-size:13px}
+  .badge.ok{background:#e8f6ef; color:var(--good); border:1px solid #cde8da}
+  .badge.mid{background:#fff6e6; color:var(--warn); border:1px solid #f1d9a7}
+  .badge.risk{background:#ffecec; color:var(--bad); border:1px solid #f6c5c5}
+  .afford-title{font-weight:800}
+  .afford-sub{color:var(--muted); font-size:13px}
+
+  .panel{border:1px solid var(--table-border); border-radius:12px; background:#fff; padding:12px; box-shadow:0 6px 16px rgba(15,23,42,.04)}
+  .panel-title{font-weight:700; font-size:14px; background:#f3f6ff; padding:8px 10px; border-radius:8px; border:1px solid #e6edff; margin-bottom:10px}
+
+  /* --- Översikt: snazzy aligned KVPs + status chip --- */
+  .kvp{display:grid; grid-template-columns:1fr; gap:8px; margin-top:4px}
+  .kvp-row{display:grid; grid-template-columns: auto 1fr; align-items:baseline; gap:10px; padding:6px 8px; border:1px dashed #e6ecfb; border-radius:10px; background:#fbfdff}
+  .kvp-label{color:#334155; font-size:13px}
+  .kvp-value{justify-self:end; display:flex; align-items:baseline; gap:6px; font-weight:800}
+  .kvp-value .unit{font-weight:600; color:var(--muted); font-size:12.5px}
+  .status-line{display:flex; align-items:center; justify-content:space-between; margin-top:10px}
+  .status-chip{display:inline-flex; align-items:center; gap:8px; border-radius:999px; padding:6px 10px; font-weight:700; border:1px solid #e5e5e5}
+  .status-chip .dot{width:8px; height:8px; border-radius:50%}
+  .status-chip.ok{background:#e8f6ef; border-color:#cde8da; color:var(--good)}
+  .status-chip.ok .dot{background:var(--good)}
+  .status-chip.mid{background:#fff6e6; border-color:#f1d9a7; color:var(--warn)}
+  .status-chip.mid .dot{background:var(--warn)}
+  .status-chip.risk{background:#ffecec; border-color:#f6c5c5; color:var(--bad)}
+  .status-chip.risk .dot{background:var(--bad)}
+  .status-note{font-size:12px; color:var(--muted); margin-top:6px}
+
+  /* Mini tables inside panels */
+  .mini{width:100%; border-collapse:separate; border-spacing:0; border:1px solid var(--table-border); border-radius:10px; overflow:hidden}
+  .mini td, .mini th{padding:9px 10px; border-bottom:1px solid var(--table-border); font-size:13px}
+  .mini tfoot td{font-weight:800; background:#fafcff}
+  .mini thead th{background:#eef3ff; font-weight:700}
+  .mini-compact thead th{text-align:center}
+
+  /* Print: keep EACH top-level section whole (no splitting across pages) */
+  @media print {
+    @page { size: A4; margin: 12mm; }
+    html, body { background:#fff !important; color:#000 !important; }
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+
+    .grid { grid-template-columns: 1fr !important; gap: 12px !important; }
+    .topbar, .btn, .tfootbar .right { display: none !important; }
+
+    /* Keep every section intact; if too tall it moves to the next page */
+    .header, .afford--grid, .card, .section { 
+      break-inside: avoid; page-break-inside: avoid; 
+      background:#fff !important; border:1px solid #bbb !important; box-shadow:none !important;
     }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{margin:0; font-family:system-ui, Segoe UI, Roboto, Arial, sans-serif; background:var(--bg); color:var(--ink)}
-    .topbar{position:sticky; top:0; z-index:10; background:linear-gradient(180deg,#fff 0%,rgba(255,255,255,.9) 100%); border-bottom:1px solid var(--table-border); backdrop-filter:saturate(150%) blur(6px)}
-    .topbar-inner{max-width:1024px; margin:0 auto; padding:10px 16px; display:flex; gap:10px; align-items:center}
-    .btn{appearance:none; border:none; cursor:pointer; height:var(--input-h); padding:0 14px; border-radius:12px; font-weight:600; background:var(--accent); color:#fff; box-shadow:0 6px 18px rgba(59,130,246,.25)}
-    .btn.secondary{background:#edf2ff; color:#0f172a; border:1px solid var(--chip-border); box-shadow:none}
-    .btn.ghost{background:transparent; border:1px dashed #cfd7ef; color:#0f172a}
-    .btn.icon{width:var(--input-h); padding:0; display:grid; place-items:center}
-    .btn.danger{background:#fff0f0; color:#9b1c1c; border:1px solid #f1c2c2; box-shadow:none}
 
-    .wrap{max-width:1024px; margin:22px auto; padding:0 16px;}
-    .header{background:var(--card); border:1px solid var(--table-border); border-radius:var(--radius); padding:18px; box-shadow:var(--shadow)}
-    .title{font-size:26px; font-weight:800; margin:.2rem 0 .4rem}
-    .subtitle{margin:0; color:var(--accent-2); font-weight:600}
-    .chips{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px}
-    .chip{background:var(--chip); border:1px solid var(--chip-border); color:#0f172a; padding:6px 10px; border-radius:999px; font-size:13px}
-
-    .grid{display:grid; gap:18px; grid-template-columns:1fr}
-    @media (min-width:980px){ .grid{grid-template-columns: 1.15fr .85fr;} }
-
-    .card{background:var(--card); border:1px solid var(--table-border); border-radius:var(--radius); padding:16px; box-shadow:var(--shadow)}
-    .card h2{margin:0 0 12px; font-size:18px}
-
-    .section{border:1px solid var(--table-border); border-radius:12px; padding:12px; background:#fff; margin-bottom:12px}
-    .section h3{margin:0 0 10px; font-size:14px; color:#0f172a}
-    .row{display:grid; grid-template-columns:1fr 1fr; gap:12px}
-    .row + .row{margin-top:10px}
-
-    label{font-size:13px; color:var(--muted); display:block; margin:0 0 6px}
-    input[type="number"], input[type="text"]{width:100%; height:var(--input-h); padding:0 12px; font-size:14px; color:var(--ink); background:#f9fbff; border:1px solid #cfd7ef; border-radius:var(--radius-sm)}
-    input:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 2px rgba(59,130,246,.2)}
-
-    table{width:100%; border-collapse:separate; border-spacing:0; border:1px solid var(--table-border); border-radius:12px; overflow:hidden; margin-top:8px}
-    thead th{background:#eef3ff; color:#111; text-align:left; font-weight:700; padding:10px; font-size:13px; border-bottom:1px solid var(--table-border)}
-    tbody td{padding:8px 10px; border-bottom:1px solid var(--table-border); font-size:14px; vertical-align:middle}
-    tbody tr:nth-child(even){background:#fafcff}
-    .num{text-align:right; white-space:nowrap}
-    .tot{font-weight:800}
-    td input[type="text"]{height:38px}
-    td.num input[type="number"]{height:38px; text-align:right}
-    .cell-actions{display:flex; justify-content:flex-end}
-    .cell-actions .btn{height:34px; border-radius:10px}
-    .tfootbar{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px; border:1px solid var(--table-border); border-top:none; border-radius:0 0 12px 12px; background:#fff}
-
-    .good{color:var(--good); font-weight:700}
-    .warn{color:var(--warn); font-weight:700}
-    .bad {color:var(--bad);  font-weight:700}
-
-    @media print{
-      body{background:#fff; color:#000}
-      .topbar{display:none}
-      .wrap{max-width:none; margin:0; padding:0}
-      .header, .card{box-shadow:none; border:1px solid #bbb}
-      .btn{display:none!important}
-    }
-  </style>
+    table { break-inside: auto; page-break-inside: auto; }
+    thead { display: table-header-group; }
+    tfoot { display: table-footer-group; }
+    tbody tr { break-inside: avoid; page-break-inside: avoid; }
+    #otherBody tr { break-inside: avoid; page-break-inside: avoid; }
+  }
+</style>
 </head>
 <body>
 
-  <!-- Sticky action bar -->
-  <div class="topbar">
-    <div class="topbar-inner">
-      <button class="btn" onclick="window.print()">🖨️ Skriv ut PDF</button>
-      <button class="btn secondary" onclick="resetDefaults()">↺ Återställ</button>
-    </div>
+<!-- Sticky action bar -->
+<div class="topbar">
+  <div class="topbar-inner">
+    <button class="btn" onclick="window.print()">🖨️ Skriv ut PDF</button>
+    <button class="btn secondary" onclick="resetDefaults()">↺ Återställ</button>
   </div>
+</div>
 
-  <div class="wrap">
-    <section class="header">
-      <h1 class="title">KALP – Bostadsköp</h1>
-      <p class="subtitle">Omar &amp; Süreyya — 2 vuxna + barn — Minst 10% insats</p>
-      <div class="chips">
-        <span class="chip">Bostadspris: <strong id="chip-price">3&nbsp;200&nbsp;000 kr</strong></span>
-        <span class="chip">Insats: <strong id="chip-down">400&nbsp;000 kr</strong> (<span id="chip-down-pct">12,5%</span>)</span>
-        <span class="chip">Lån: <strong id="chip-loan">2&nbsp;800&nbsp;000 kr</strong></span>
-        <span class="chip">Belåningsgrad: <strong id="chip-ltv">87,5%</strong></span>
-        <span class="chip">Netto hushåll: <strong id="chip-netto">61&nbsp;000 kr/mån</strong></span>
-        <span class="chip">Ränta (verklig): <strong id="chip-rate">4,00%</strong></span>
-        <span class="chip">Amort.: <strong id="chip-amort">Auto</strong></span>
+<div class="wrap">
+  <section class="header">
+    <h1 class="title">KALP – Bostadsköp</h1>
+    <p class="subtitle">Omar &amp; Süreyya — 2 vuxna + barn — Minst 10% insats</p>
+    <div class="chips">
+      <span class="chip">Bostadspris: <strong id="chip-price">3&nbsp;200&nbsp;000 kr</strong></span>
+      <span class="chip">Insats: <strong id="chip-down">400&nbsp;000 kr</strong> (<span id="chip-down-pct">12,5%</span>)</span>
+      <span class="chip">Lån: <strong id="chip-loan">2&nbsp;800&nbsp;000 kr</strong></span>
+      <span class="chip">Belåningsgrad: <strong id="chip-ltv">87,5%</strong></span>
+      <span class="chip">Netto hushåll: <strong id="chip-netto">61&nbsp;000 kr/mån</strong></span>
+      <span class="chip">Ränta (verklig): <strong id="chip-rate">4,00%</strong></span>
+      <span class="chip">Amort.: <strong id="chip-amort">Auto</strong></span>
+    </div>
+
+    <!-- Rimlighet över tre kolumner -->
+    <div class="afford afford--grid" id="affordBlock">
+      <div class="afford-bar">
+        <span class="badge ok" id="affordBadge">OK</span>
+        <div>
+          <div class="afford-title">Rimlighet enligt banken</div>
+          <div class="afford-sub">Baserat på KALP (kalkylränta, amortering, avgift/drift &amp; schablon)</div>
+        </div>
+      </div>
+
+      <!-- Översikt -->
+      <div class="panel">
+        <div class="panel-title">Översikt</div>
+        <div class="kvp">
+          <div class="kvp-row">
+            <div class="kvp-label">Netto hushåll</div>
+            <div class="kvp-value"><span id="a_net">–</span><span class="unit">/mån</span></div>
+          </div>
+          <div class="kvp-row">
+            <div class="kvp-label">Belåningsgrad (LTV)</div>
+            <div class="kvp-value"><span id="a_ltv">–</span></div>
+          </div>
+          <div class="kvp-row">
+            <div class="kvp-label">Kvar enligt banken</div>
+            <div class="kvp-value"><span id="a_left_bank">–</span></div>
+          </div>
+          <div class="kvp-row">
+            <div class="kvp-label">Kvar (verkligt)</div>
+            <div class="kvp-value"><span id="a_left_real">–</span></div>
+          </div>
+        </div>
+        <div class="status-line">
+          <div class="status-chip ok" id="statusChip"><span class="dot"></span><span id="statusText">OK</span></div>
+        </div>
+        <div class="status-note">Statuslogik: <strong>OK</strong> ≥ 17&nbsp;000 kr · <strong>På gränsen</strong> 12–16&nbsp;999 kr · <strong>Risk</strong> &lt; 12&nbsp;000 kr kvar.</div>
+      </div>
+
+      <!-- KALP-panel -->
+      <div class="panel">
+        <div class="panel-title">Bankens KALP (per månad)</div>
+        <table class="mini">
+          <tbody>
+            <tr><td>Ränta (kalkyl <span id="a_rate_bank_pct">–</span>)</td><td class="num" id="a_rate_bank">–</td></tr>
+            <tr><td>Amortering (<span id="a_amort_pct">–</span>)</td><td class="num" id="a_amort">–</td></tr>
+            <tr><td>Avgift + drift</td><td class="num" id="a_fee">–</td></tr>
+            <tr><td>Levnadsschablon</td><td class="num" id="a_kalp">–</td></tr>
+          </tbody>
+          <tfoot>
+            <tr><td>Totalt “KALP-kostnad”</td><td class="num" id="a_total_kalp">–</td></tr>
+            <tr><td>Netto hushåll</td><td class="num" id="a_net_2">–</td></tr>
+            <tr><td><strong>Kvar enligt banken</strong></td><td class="num tot" id="a_left_bank_2">–</td></tr>
+          </tfoot>
+        </table>
+        <p class="status-note" id="a_reason_text">—</p>
+      </div>
+
+      <!-- Känslighets-analys -->
+      <div class="panel">
+        <div class="panel-title">Känslighetsanalys – kalkylränta</div>
+        <table class="mini mini-compact">
+          <thead>
+            <tr>
+              <th id="sens_lo_pct">–</th>
+              <th id="sens_mid_pct">–</th>
+              <th id="sens_hi_pct">–</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="num" id="sens_lo_left">–</td>
+              <td class="num" id="sens_mid_left">–</td>
+              <td class="num" id="sens_hi_left">–</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="status-note">Visar “kvar enligt banken” om kalkylräntan ändras ±1 %-enhet.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="grid" style="margin-top:16px">
+    <!-- Parametrar -->
+    <section class="card">
+      <h2>Parametrar</h2>
+
+      <div class="section">
+        <h3>Köp &amp; insats</h3>
+        <div class="row">
+          <div>
+            <label>Bostadspris (kr)</label>
+            <input type="number" id="price" value="3200000" step="10000" min="0"/>
+          </div>
+          <div>
+            <label>Kontantinsats (kr)</label>
+            <input type="number" id="down" value="400000" step="10000" min="0"/>
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label>…eller kontantinsats (%)</label>
+            <input type="number" id="downPct" value="12.5" step="0.1" min="0" max="100"/>
+          </div>
+          <div></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>Inkomster</h3>
+        <div class="row">
+          <div>
+            <label>Omar – lön (netto kr/mån)</label>
+            <input type="number" id="incomeOmar" value="34000" step="500" min="0"/>
+          </div>
+          <div>
+            <label>Süreyya – lön (netto kr/mån)</label>
+            <input type="number" id="incomeSureyya" value="27000" step="500" min="0"/>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>Hushåll</h3>
+        <div class="row">
+          <div>
+            <label>Antal barn under 18 år</label>
+            <input type="number" id="childrenCount" value="1" step="1" min="0" max="10"/>
+          </div>
+          <div>
+            <label>Avgift + drift (kr/mån)</label>
+            <input type="number" id="fee" value="6500" step="100" min="0"/>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>Räntor &amp; KALP</h3>
+        <div class="row">
+          <div>
+            <label>Verklig ränta (% per år)</label>
+            <input type="number" id="rate" value="4.0" step="0.1" min="0" max="20"/>
+          </div>
+          <div>
+            <label>Bankens kalkylränta (% per år)</label>
+            <input type="number" id="rateBank" value="7.0" step="0.1" min="0" max="20"/>
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label>KALP-schablon (redigerbar)</label>
+            <div class="row" style="grid-template-columns:1fr auto; gap:8px">
+              <input type="number" id="kalpSchablon" value="15000" step="500" min="0"/>
+              <button class="btn secondary" id="applySuggestion" type="button">Använd förslag</button>
+            </div>
+            <div class="muted" id="kalpSuggestion" style="margin-top:6px">Föreslaget: 15&nbsp;000 kr</div>
+          </div>
+          <div></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>Amortering</h3>
+        <div class="row">
+          <div>
+            <label>Amortering (% per år) – lämna tomt för auto</label>
+            <input type="number" id="amort" value="" step="0.1" min="0" max="5" placeholder="Auto: 2% >70%, 1% 50–70%, 0% ≤50%"/>
+            <div class="muted" id="amortRuleHint" style="margin-top:6px">Auto enligt regel: 2,00%</div>
+          </div>
+          <div></div>
+        </div>
       </div>
     </section>
 
-    <div class="grid" style="margin-top:16px">
-      <!-- Left: Parameters (now sectioned) -->
-      <section class="card">
-        <h2>Parametrar</h2>
-
-        <div class="section">
-          <h3>Köp &amp; insats</h3>
-          <div class="row">
-            <div>
-              <label>Bostadspris (kr)</label>
-              <input type="number" id="price" value="3200000" step="10000" min="0"/>
-            </div>
-            <div>
-              <label>Kontantinsats (kr)</label>
-              <input type="number" id="down" value="400000" step="10000" min="0"/>
-            </div>
-          </div>
-          <div class="row">
-            <div>
-              <label>…eller kontantinsats (%)</label>
-              <input type="number" id="downPct" value="12.5" step="0.1" min="0" max="100"/>
-            </div>
-            <div></div>
-          </div>
-        </div>
-
-        <div class="section">
-          <h3>Inkomster</h3>
-          <div class="row">
-            <div>
-              <label>Omar – lön (netto kr/mån)</label>
-              <input type="number" id="incomeOmar" value="34000" step="500" min="0"/>
-            </div>
-            <div>
-              <label>Süreyya – lön (netto kr/mån)</label>
-              <input type="number" id="incomeSureyya" value="27000" step="500" min="0"/>
-            </div>
-          </div>
-        </div>
-
-        <div class="section">
-          <h3>Hushåll</h3>
-          <div class="row">
-            <div>
-              <label>Antal barn under 18 år</label>
-              <input type="number" id="childrenCount" value="1" step="1" min="0" max="10"/>
-            </div>
-            <div>
-              <label>Avgift + drift (kr/mån)</label>
-              <input type="number" id="fee" value="6500" step="100" min="0"/>
-            </div>
-          </div>
-        </div>
-
-        <div class="section">
-          <h3>Räntor &amp; KALP</h3>
-          <div class="row">
-            <div>
-              <label>Verklig ränta (% per år)</label>
-              <input type="number" id="rate" value="4.0" step="0.1" min="0" max="20"/>
-            </div>
-            <div>
-              <label>Bankens kalkylränta (% per år)</label>
-              <input type="number" id="rateBank" value="7.0" step="0.1" min="0" max="20"/>
-            </div>
-          </div>
-          <div class="row">
-            <div>
-              <label>KALP-schablon (redigerbar)</label>
-              <div class="row" style="grid-template-columns:1fr auto; gap:8px">
-                <input type="number" id="kalpSchablon" value="15000" step="500" min="0"/>
-                <button class="btn secondary" id="applySuggestion" type="button">Använd förslag</button>
-              </div>
-              <div class="muted" id="kalpSuggestion" style="margin-top:6px">Föreslaget: 15&nbsp;000 kr</div>
-            </div>
-            <div></div>
-          </div>
-        </div>
-
-        <div class="section">
-          <h3>Amortering</h3>
-          <div class="row">
-            <div>
-              <label>Amortering (% per år) – lämna tomt för auto</label>
-              <input type="number" id="amort" value="" step="0.1" min="0" max="5" placeholder="Auto: 2% >70%, 1% 50–70%, 0% ≤50%"/>
-              <div class="muted" id="amortRuleHint" style="margin-top:6px">Auto enligt regel: 2,00%</div>
-            </div>
-            <div></div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Right: Expenses -->
-      <section class="card">
-        <h2>Övriga hushållsutgifter (redigerbara)</h2>
-        <table>
-          <thead>
-            <tr><th>Utgift</th><th class="num">Kostnad/mån</th><th class="num">Åtgärd</th></tr>
-          </thead>
-          <tbody id="otherBody">
-            <tr><td><input type="text" value="Mat &amp; hushåll"/></td><td class="num"><input type="number" value="9000" step="100" min="0"/></td><td class="num"><div class="cell-actions"><button class="btn icon danger" onclick="delRow(this)">🗑</button></div></td></tr>
-            <tr><td><input type="text" value="Bil"/></td><td class="num"><input type="number" value="3000" step="100" min="0"/></td><td class="num"><div class="cell-actions"><button class="btn icon danger" onclick="delRow(this)">🗑</button></div></td></tr>
-            <tr><td><input type="text" value="Barnkostnader"/></td><td class="num"><input type="number" value="4000" step="100" min="0"/></td><td class="num"><div class="cell-actions"><button class="btn icon danger" onclick="delRow(this)">🗑</button></div></td></tr>
-            <tr><td><input type="text" value="Försäkringar &amp; abonnemang"/></td><td class="num"><input type="number" value="2000" step="50" min="0"/></td><td class="num"><div class="cell-actions"><button class="btn icon danger" onclick="delRow(this)">🗑</button></div></td></tr>
-            <tr><td><input type="text" value="Kläder &amp; nöjen vuxna"/></td><td class="num"><input type="number" value="3000" step="100" min="0"/></td><td class="num"><div class="cell-actions"><button class="btn icon danger" onclick="delRow(this)">🗑</button></div></td></tr>
-            <tr><td><input type="text" value="Resor / sparbuffert"/></td><td class="num"><input type="number" value="3000" step="100" min="0"/></td><td class="num"><div class="cell-actions"><button class="btn icon danger" onclick="delRow(this)">🗑</button></div></td></tr>
-          </tbody>
-        </table>
-        <div class="tfootbar">
-          <div class="left"><strong>Totalt övrigt:</strong> <span id="otherTotal" style="margin-left:6px">24&nbsp;000 kr</span></div>
-          <div class="right"><button class="btn ghost" onclick="addRow()">+ Lägg till rad</button></div>
-        </div>
-      </section>
-    </div>
-
-    <!-- Housing costs (real) -->
-    <section class="card" style="margin-top:16px">
-      <h2>Boendekostnader (verklig ränta)</h2>
+    <!-- Övriga hushållsutgifter -->
+    <section class="card">
+      <h2>Övriga hushållsutgifter (redigerbara)</h2>
       <table>
-        <thead><tr><th>Post</th><th>Uträkning</th><th class="num">Kostnad/mån</th></tr></thead>
-        <tbody>
-          <tr><td>Ränta</td><td id="calc-rate-desc">–</td><td class="num" id="rateMonthly">–</td></tr>
-          <tr><td>Amortering</td><td id="calc-amort-desc">–</td><td class="num" id="amortMonthly">–</td></tr>
-          <tr><td>Avgift + drift</td><td>Enligt inmatning</td><td class="num" id="feeMonthly">–</td></tr>
+        <thead>
+          <tr><th>Utgift</th><th class="num">Kostnad/mån</th><th class="num">Åtgärd</th></tr>
+        </thead>
+        <tbody id="otherBody">
+          <tr><td><input type="text" value="Mat &amp; hushåll"/></td><td class="num"><input type="number" value="9000" step="100" min="0"/></td><td class="num"><div class="cell-actions"><button class="btn icon danger" onclick="delRow(this)">🗑</button></div></td></tr>
+          <tr><td><input type="text" value="Bil"/></td><td class="num"><input type="number" value="3000" step="100" min="0"/></td><td class="num"><div class="cell-actions"><button class="btn icon danger" onclick="delRow(this)">🗑</button></div></td></tr>
+          <tr><td><input type="text" value="Barnkostnader"/></td><td class="num"><input type="number" value="4000" step="100" min="0"/></td><td class="num"><div class="cell-actions"><button class="btn icon danger" onclick="delRow(this)">🗑</button></div></td></tr>
+          <tr><td><input type="text" value="Försäkringar &amp; abonnemang"/></td><td class="num"><input type="number" value="2000" step="50" min="0"/></td><td class="num"><div class="cell-actions"><button class="btn icon danger" onclick="delRow(this)">🗑</button></div></td></tr>
+          <tr><td><input type="text" value="Kläder &amp; nöjen vuxna"/></td><td class="num"><input type="number" value="3000" step="100" min="0"/></td><td class="num"><div class="cell-actions"><button class="btn icon danger" onclick="delRow(this)">🗑</button></div></td></tr>
+          <tr><td><input type="text" value="Resor / sparbuffert"/></td><td class="num"><input type="number" value="3000" step="100" min="0"/></td><td class="num"><div class="cell-actions"><button class="btn icon danger" onclick="delRow(this)">🗑</button></div></td></tr>
         </tbody>
-        <tfoot><tr><td class="tot">Totalt boende</td><td></td><td class="num tot" id="housingTotal">–</td></tr></tfoot>
       </table>
-    </section>
-
-    <!-- Summary (real) -->
-    <section class="card" style="margin-top:16px">
-      <h2>Sammanställning (verklig)</h2>
-      <table>
-        <thead><tr><th>Post</th><th class="num">Belopp/mån</th></tr></thead>
-        <tbody>
-          <tr><td>Omar – netto</td><td class="num" id="sumOmar">–</td></tr>
-          <tr><td>Süreyya – netto</td><td class="num" id="sumSureyya">–</td></tr>
-          <tr><td><strong>Netto hushåll (summa)</strong></td><td class="num" id="sumIncome">–</td></tr>
-          <tr><td>Minus boende</td><td class="num" id="sumHousing">–</td></tr>
-          <tr><td>Minus övrigt</td><td class="num" id="sumOther">–</td></tr>
-        </tbody>
-        <tfoot><tr><td class="tot">Kvar att spara / investera</td><td class="num tot" id="leftover">–</td></tr></tfoot>
-      </table>
-
-      <!-- Breakdown of other expenses -->
-      <h3 style="margin:14px 0 6px">Detaljerade övriga utgifter</h3>
-      <table id="otherBreakdown">
-        <thead><tr><th>Utgift</th><th class="num">Belopp/mån</th></tr></thead>
-        <tbody id="otherBreakdownBody"><tr><td class="muted">—</td><td class="num">—</td></tr></tbody>
-      </table>
-    </section>
-
-    <!-- Bank KALP -->
-    <section class="card" style="margin-top:16px">
-      <h2>Bankens stresstest (KALP)</h2>
-      <table>
-        <thead><tr><th>Post</th><th>Uträkning</th><th class="num">Belopp/mån</th></tr></thead>
-        <tbody>
-          <tr><td>Ränta (kalkyl)</td><td id="calc-rate-bank">–</td><td class="num" id="bankRateMonthly">–</td></tr>
-          <tr><td>Amortering (regel/manuell)</td><td id="calc-amort-bank">–</td><td class="num" id="bankAmortMonthly">–</td></tr>
-          <tr><td>Avgift + drift</td><td>Enligt inmatning</td><td class="num" id="bankFeeMonthly">–</td></tr>
-          <tr><td>Levnadsschablon</td><td>Schablon</td><td class="num" id="bankKalpMonthly">–</td></tr>
-        </tbody>
-        <tfoot><tr><td class="tot">Kvar enligt banken = Netto − [Boende(kalkyl) + Schablon]</td><td></td><td class="num tot" id="leftoverBank">–</td></tr></tfoot>
-      </table>
-      <p class="muted" style="margin-top:8px">Schablonförslag räknas som 13&nbsp;000 kr för 2 vuxna + ~2&nbsp;000 kr/barn. Du kan alltid skriva över.</p>
+      <div class="tfootbar">
+        <div class="left"><strong>Totalt övrigt:</strong> <span id="otherTotal" style="margin-left:6px">24&nbsp;000 kr</span></div>
+        <div class="right"><button class="btn ghost" onclick="addRow()">+ Lägg till rad</button></div>
+      </div>
     </section>
   </div>
 
-  <script>
-    // ---------- Helpers ----------
-    const money = n => (isNaN(n) ? "–" : Math.round(n).toLocaleString('sv-SE') + " kr");
-    const pct = n => (isNaN(n) ? "–" : n.toFixed(1) + "%");
-    const clamp = (v,min,max) => Math.max(min, Math.min(max, v));
-    const q = id => document.getElementById(id);
-    function amortPctByRule(ltv){ if (ltv > 70) return 2.0; if (ltv > 50) return 1.0; return 0.0; }
-    function colorize(el, val){ el.classList.remove("good","warn","bad"); if (val>=17000) el.classList.add("good"); else if (val>=15000) el.classList.add("warn"); else el.classList.add("bad"); }
+  <!-- Boendekostnader -->
+  <section class="card" style="margin-top:16px">
+    <h2>Boendekostnader (verklig ränta)</h2>
+    <table>
+      <thead><tr><th>Post</th><th>Uträkning</th><th class="num">Kostnad/mån</th></tr></thead>
+      <tbody>
+        <tr><td>Ränta</td><td id="calc-rate-desc">–</td><td class="num" id="rateMonthly">–</td></tr>
+        <tr><td>Amortering</td><td id="calc-amort-desc">–</td><td class="num" id="amortMonthly">–</td></tr>
+        <tr><td>Avgift + drift</td><td>Enligt inmatning</td><td class="num" id="feeMonthly">–</td></tr>
+      </tbody>
+      <tfoot><tr><td class="tot">Totalt boende</td><td></td><td class="num tot" id="housingTotal">–</td></tr></tfoot>
+    </table>
+  </section>
 
-    // ---------- Elements ----------
-    const els = {
-      price:q("price"), down:q("down"), downPct:q("downPct"),
-      incomeOmar:q("incomeOmar"), incomeSureyya:q("incomeSureyya"),
-      childrenCount:q("childrenCount"), kalp:q("kalpSchablon"),
-      applySuggestion:q("applySuggestion"), kalpSuggestion:q("kalpSuggestion"),
-      fee:q("fee"), rate:q("rate"), rateBank:q("rateBank"),
-      amortManual:q("amort"), amortRuleHint:q("amortRuleHint"),
-      chipPrice:q("chip-price"), chipDown:q("chip-down"), chipDownPct:q("chip-down-pct"),
-      chipLoan:q("chip-loan"), chipLtv:q("chip-ltv"), chipNet:q("chip-netto"),
-      chipRate:q("chip-rate"), chipAmort:q("chip-amort"),
-      rateDesc:q("calc-rate-desc"), amortDesc:q("calc-amort-desc"),
-      rateMonthly:q("rateMonthly"), amortMonthly:q("amortMonthly"), feeMonthly:q("feeMonthly"),
-      housingTotal:q("housingTotal"),
-      sumOmar:q("sumOmar"), sumSureyya:q("sumSureyya"), sumIncome:q("sumIncome"),
-      sumHousing:q("sumHousing"), sumOther:q("sumOther"), leftover:q("leftover"),
-      rateDescBank:q("calc-rate-bank"), bankRateMonthly:q("bankRateMonthly"),
-      amortDescBank:q("calc-amort-bank"), bankAmortMonthly:q("bankAmortMonthly"),
-      bankFeeMonthly:q("bankFeeMonthly"), bankKalpMonthly:q("bankKalpMonthly"),
-      leftoverBank:q("leftoverBank"),
-      otherBody:q("otherBody"), otherTotal:q("otherTotal"),
-      otherBreakdownBody:q("otherBreakdownBody"),
-    };
+  <!-- Sammanställning -->
+  <section class="card" style="margin-top:16px">
+    <h2>Sammanställning (verklig)</h2>
+    <table>
+      <thead><tr><th>Post</th><th class="num">Belopp/mån</th></tr></thead>
+      <tbody>
+        <tr><td>Omar – netto</td><td class="num" id="sumOmar">–</td></tr>
+        <tr><td>Süreyya – netto</td><td class="num" id="sumSureyya">–</td></tr>
+        <tr><td><strong>Netto hushåll (summa)</strong></td><td class="num" id="sumIncome">–</td></tr>
+        <tr><td>Minus boende</td><td class="num" id="sumHousing">–</td></tr>
+        <tr><td>Minus övrigt</td><td class="num" id="sumOther">–</td></tr>
+      </tbody>
+      <tfoot><tr><td class="tot">Kvar att spara / investera</td><td class="num tot" id="leftover">–</td></tr></tfoot>
+    </table>
 
-    // ---------- Other expenses ----------
-    function sumOther(){ let s=0; els.otherBody.querySelectorAll("input[type='number']").forEach(i=> s += (+i.value||0)); return s; }
-    function rebuildOtherBreakdown(){
-      const rows = Array.from(els.otherBody.querySelectorAll("tr"));
-      els.otherBreakdownBody.innerHTML = rows.length? "" : `<tr><td class="muted">—</td><td class="num">—</td></tr>`;
-      rows.forEach(tr=>{
-        const name = tr.querySelector('td:nth-child(1) input')?.value || '';
-        const val  = +tr.querySelector('td:nth-child(2) input')?.value || 0;
-        const r = document.createElement("tr");
-        r.innerHTML = `<td>${name||"<span class='muted'>Utan namn</span>"}</td><td class="num">${money(val)}</td>`;
-        els.otherBreakdownBody.appendChild(r);
-      });
-    }
-    function addRow(){
-      const tr=document.createElement("tr");
-      tr.innerHTML=`<td><input type="text" value="Ny post"/></td>
-        <td class="num"><input type="number" value="0" step="50" min="0"/></td>
-        <td class="num"><div class="cell-actions"><button class="btn icon danger" onclick="delRow(this)">🗑</button></div></td>`;
-      els.otherBody.appendChild(tr);
-      tr.querySelectorAll("input").forEach(inp=> inp.addEventListener("input",update));
-      update();
-    }
-    function delRow(btn){ btn.closest("tr").remove(); update(); }
-    window.addRow=addRow; window.delRow=delRow;
+    <h3 style="margin:14px 0 6px">Detaljerade övriga utgifter</h3>
+    <table id="otherBreakdown">
+      <thead><tr><th>Utgift</th><th class="num">Belopp/mån</th></tr></thead>
+      <tbody id="otherBreakdownBody"><tr><td class="muted">—</td><td class="num">—</td></tr></tbody>
+    </table>
+  </section>
 
-    // ---------- Sync down vs downPct ----------
-    function syncDown(){
-      const price=+els.price.value||0;
-      if(document.activeElement===els.down){
-        const pctVal=price>0?(+els.down.value/price*100):0;
-        els.downPct.value=isFinite(pctVal)?pctVal.toFixed(1):"0.0";
-      }else if(document.activeElement===els.downPct){
-        const pctVal=clamp(+els.downPct.value||0,0,100);
-        els.down.value=Math.round(price*pctVal/100);
-      }
-    }
+  <!-- Bank KALP -->
+  <section class="card" style="margin-top:16px">
+    <h2>Bankens stresstest (KALP)</h2>
+    <table>
+      <thead><tr><th>Post</th><th>Uträkning</th><th class="num">Belopp/mån</th></tr></thead>
+      <tbody>
+        <tr><td>Ränta (kalkyl)</td><td id="calc-rate-bank">–</td><td class="num" id="bankRateMonthly">–</td></tr>
+        <tr><td>Amortering (regel/manuell)</td><td id="calc-amort-bank">–</td><td class="num" id="bankAmortMonthly">–</td></tr>
+        <tr><td>Avgift + drift</td><td>Enligt inmatning</td><td class="num" id="bankFeeMonthly">–</td></tr>
+        <tr><td>Levnadsschablon</td><td>Schablon</td><td class="num" id="bankKalpMonthly">–</td></tr>
+      </tbody>
+      <tfoot><tr><td class="tot">Kvar enligt banken = Netto − [Boende(kalkyl) + Schablon]</td><td></td><td class="num tot" id="leftoverBank">–</td></tr></tfoot>
+    </table>
+    <p class="muted" style="margin-top:8px">Schablonförslag räknas som 13&nbsp;000 kr för 2 vuxna + ~2&nbsp;000 kr/barn. Du kan alltid skriva över.</p>
+  </section>
+</div>
 
-    // ---------- Suggested KALP ----------
-    function calcSuggestedKalp(){
-      const baseAdults=13000; const perChild=2000;
-      const n=+els.childrenCount.value||0; return baseAdults+perChild*n;
-    }
+<script>
+  // ---------- Helpers ----------
+  const money = n => (isNaN(n) ? "–" : Math.round(n).toLocaleString('sv-SE') + " kr");
+  const pct = n => (isNaN(n) ? "–" : n.toFixed(1) + "%");
+  const clamp = (v,min,max) => Math.max(min, Math.min(max, v));
+  const q = id => document.getElementById(id);
+  function amortPctByRule(ltv){ if (ltv > 70) return 2.0; if (ltv > 50) return 1.0; return 0.0; }
+  function colorize(el, val){ el.classList.remove("good","warn","bad"); if (val>=17000) el.classList.add("good"); else if (val>=15000) el.classList.add("warn"); else el.classList.add("bad"); }
 
-    // ---------- Update ----------
-    function update(){
-      syncDown();
-      const price=+els.price.value||0;
-      let down=+els.down.value||0;
-      const minDown=Math.round(price*0.10);
-      if(down<minDown){ down=minDown; els.down.value=down; els.downPct.value=10.0.toFixed(1); }
+  // Elements
+  const els = {
+    price:q("price"), down:q("down"), downPct:q("downPct"),
+    incomeOmar:q("incomeOmar"), incomeSureyya:q("incomeSureyya"),
+    childrenCount:q("childrenCount"), kalp:q("kalpSchablon"),
+    applySuggestion:q("applySuggestion"), kalpSuggestion:q("kalpSuggestion"),
+    fee:q("fee"), rate:q("rate"), rateBank:q("rateBank"),
+    amortManual:q("amort"), amortRuleHint:q("amortRuleHint"),
+    chipPrice:q("chip-price"), chipDown:q("chip-down"), chipDownPct:q("chip-down-pct"),
+    chipLoan:q("chip-loan"), chipLtv:q("chip-ltv"), chipNet:q("chip-netto"),
+    chipRate:q("chip-rate"), chipAmort:q("chip-amort"),
+    rateDesc:q("calc-rate-desc"), amortDesc:q("calc-amort-desc"),
+    rateMonthly:q("rateMonthly"), amortMonthly:q("amortMonthly"), feeMonthly:q("feeMonthly"),
+    housingTotal:q("housingTotal"),
+    sumOmar:q("sumOmar"), sumSureyya:q("sumSureyya"), sumIncome:q("sumIncome"),
+    sumHousing:q("sumHousing"), sumOther:q("sumOther"), leftover:q("leftover"),
+    rateDescBank:q("calc-rate-bank"), bankRateMonthly:q("bankRateMonthly"),
+    amortDescBank:q("calc-amort-bank"), bankAmortMonthly:q("bankAmortMonthly"),
+    bankFeeMonthly:q("bankFeeMonthly"), bankKalpMonthly:q("bankKalpMonthly"),
+    leftoverBank:q("leftoverBank"),
+    otherBody:q("otherBody"), otherTotal:q("otherTotal"),
+    otherBreakdownBody:q("otherBreakdownBody"),
+    affordBadge:q("affordBadge"),
+    // Afford IDs
+    a_net:q("a_net"), a_ltv:q("a_ltv"), a_left_bank:q("a_left_bank"), a_left_real:q("a_left_real"),
+    a_rate_bank_pct:q("a_rate_bank_pct"), a_rate_bank:q("a_rate_bank"),
+    a_amort_pct:q("a_amort_pct"), a_amort:q("a_amort"),
+    a_fee:q("a_fee"), a_kalp:q("a_kalp"), a_total_kalp:q("a_total_kalp"),
+    a_net_2:q("a_net_2"), a_left_bank_2:q("a_left_bank_2"),
+    a_reason_text:q("a_reason_text"),
+    sens_lo_pct:q("sens_lo_pct"), sens_mid_pct:q("sens_mid_pct"), sens_hi_pct:q("sens_hi_pct"),
+    sens_lo_left:q("sens_lo_left"), sens_mid_left:q("sens_mid_left"), sens_hi_left:q("sens_hi_left"),
+    statusChip:q("statusChip"), statusText:q("statusText")
+  };
 
-      const loan=Math.max(0,price-down);
-      const ltv=price>0?(loan/price*100):0;
-
-      const netO=+els.incomeOmar.value||0;
-      const netS=+els.incomeSureyya.value||0;
-      const net=netO+netS;
-
-      const fee=+els.fee.value||0;
-      const rate=(+els.rate.value||0)/100;
-      const rateBank=(+els.rateBank.value||0)/100;
-
-      const autoAmort=amortPctByRule(ltv);
-      const amortPct=els.amortManual.value===""?autoAmort:(+els.amortManual.value||0);
-      els.amortRuleHint.textContent=`Auto enligt regel: ${autoAmort.toFixed(2)}%`;
-
-      const kalpSuggested=calcSuggestedKalp();
-      els.kalpSuggestion.innerHTML=`Föreslaget: ${money(kalpSuggested)}`;
-      const kalp = +els.kalp.value || kalpSuggested;
-      if(!els.kalp.value) els.kalp.value=kalpSuggested;
-
-      // Chips
-      els.chipPrice.innerHTML=money(price);
-      els.chipDown.innerHTML=money(down);
-      els.chipDownPct.textContent=pct((down/Math.max(price,1))*100);
-      els.chipLoan.innerHTML=money(loan);
-      els.chipLtv.textContent=pct(ltv);
-      els.chipNet.textContent=money(net).replace(" kr","")+"/mån";
-      els.chipRate.textContent=(rate*100).toFixed(2)+"%";
-      els.chipAmort.textContent=(els.amortManual.value===""?"Auto":(amortPct.toFixed(2)+"%"));
-
-      // Verklig kalkyl
-      const rateMonthly=loan*rate/12;
-      const amortMonthly=loan*(amortPct/100)/12;
-      const housing=rateMonthly+amortMonthly+fee;
-      const other=sumOther();
-
-      els.rateDesc.textContent=`${(loan/1_000_000).toLocaleString('sv-SE',{maximumFractionDigits:1})} Mkr × ${(rate*100).toFixed(2)} % ÷ 12`;
-      els.amortDesc.textContent=`${(loan/1_000_000).toLocaleString('sv-SE',{maximumFractionDigits:1})} Mkr × ${amortPct.toFixed(2)} % ÷ 12`;
-      els.rateMonthly.textContent=money(rateMonthly);
-      els.amortMonthly.textContent=money(amortMonthly);
-      els.feeMonthly.textContent=money(fee);
-      els.housingTotal.textContent=money(housing);
-
-      els.sumOmar.textContent=money(netO);
-      els.sumSureyya.textContent=money(netS);
-      els.sumIncome.textContent=money(net);
-      els.sumHousing.textContent=money(housing);
-      els.sumOther.textContent=money(other);
-      const leftReal=net-housing-other;
-      els.leftover.textContent=money(leftReal);
-      colorize(els.leftover,leftReal);
-
-      // KALP
-      const bankRateMonthly=loan*rateBank/12;
-      const bankHousing=bankRateMonthly+amortMonthly+fee;
-      els.rateDescBank.textContent=`${(loan/1_000_000).toLocaleString('sv-SE',{maximumFractionDigits:1})} Mkr × ${(rateBank*100).toFixed(2)} % ÷ 12`;
-      els.bankRateMonthly.textContent=money(bankRateMonthly);
-      els.bankAmortMonthly.textContent=money(amortMonthly);
-      els.bankFeeMonthly.textContent=money(fee);
-      els.bankKalpMonthly.textContent=money(kalp);
-      const leftBank=net-bankHousing-kalp;
-      els.leftoverBank.textContent=money(leftBank);
-      colorize(els.leftoverBank,leftBank);
-
-      // Övriga total + breakdown
-      els.otherTotal.innerHTML=money(other);
-      rebuildOtherBreakdown();
-    }
-
-    // Apply suggested KALP
-    els.applySuggestion.addEventListener("click", ()=>{ els.kalp.value=calcSuggestedKalp(); update(); });
-
-    function resetDefaults(){
-      els.price.value=3200000; els.down.value=400000; els.downPct.value=12.5;
-      els.incomeOmar.value=34000; els.incomeSureyya.value=27000; els.childrenCount.value=1;
-      els.fee.value=6500; els.rate.value=4.0; els.rateBank.value=7.0; els.kalp.value=15000; els.amortManual.value="";
-      els.otherBody.innerHTML=`
-        <tr><td><input type="text" value="Mat &amp; hushåll"/></td><td class="num"><input type="number" value="9000" step="100" min="0"/></td><td class="num"><div class="cell-actions"><button class="btn icon danger" onclick="delRow(this)">🗑</button></div></td></tr>
-        <tr><td><input type="text" value="Bil"/></td><td class="num"><input type="number" value="3000" step="100" min="0"/></td><td class="num"><div class="cell-actions"><button class="btn icon danger" onclick="delRow(this)">🗑</button></div></td></tr>
-        <tr><td><input type="text" value="Barnkostnader"/></td><td class="num"><input type="number" value="4000" step="100" min="0"/></td><td class="num"><div class="cell-actions"><button class="btn icon danger" onclick="delRow(this)">🗑</button></div></td></tr>
-        <tr><td><input type="text" value="Försäkringar &amp; abonnemang"/></td><td class="num"><input type="number" value="2000" step="50" min="0"/></td><td class="num"><div class="cell-actions"><button class="btn icon danger" onclick="delRow(this)">🗑</button></div></td></tr>
-        <tr><td><input type="text" value="Kläder &amp; nöjen vuxna"/></td><td class="num"><input type="number" value="3000" step="100" min="0"/></td><td class="num"><div class="cell-actions"><button class="btn icon danger" onclick="delRow(this)">🗑</button></div></td></tr>
-        <tr><td><input type="text" value="Resor / sparbuffert"/></td><td class="num"><input type="number" value="3000" step="100" min="0"/></td><td class="num"><div class="cell-actions"><button class="btn icon danger" onclick="delRow(this)">🗑</button></div></td></tr>`;
-      els.otherBody.querySelectorAll("input").forEach(inp=> inp.addEventListener("input", update));
-      update(); window.scrollTo({top:0,behavior:"smooth"});
-    }
-
-    // Bind
-    ["price","down","downPct","incomeOmar","incomeSureyya","childrenCount","fee","rate","rateBank","kalpSchablon","amort"]
-      .forEach(id=> document.getElementById(id).addEventListener("input", update));
-    document.querySelectorAll("#otherBody input").forEach(inp=> inp.addEventListener("input", update));
-
-    // init
+  // Other expenses
+  function sumOther(){ let s=0; els.otherBody.querySelectorAll("input[type='number']").forEach(i=> s += (+i.value||0)); return s; }
+  function rebuildOtherBreakdown(){
+    const rows = Array.from(els.otherBody.querySelectorAll("tr"));
+    els.otherBreakdownBody.innerHTML = rows.length? "" : `<tr><td class="muted">—</td><td class="num">—</td></tr>`;
+    rows.forEach(tr=>{
+      const name = tr.querySelector('td:nth-child(1) input')?.value || '';
+      const val  = +tr.querySelector('td:nth-child(2) input')?.value || 0;
+      const r = document.createElement("tr");
+      r.innerHTML = `<td>${name||"<span class='muted'>Utan namn</span>"}</td><td class="num">${money(val)}</td>`;
+      els.otherBreakdownBody.appendChild(r);
+    });
+  }
+  function addRow(){
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td><input type="text" value="Ny post"/></td>
+      <td class="num"><input type="number" value="0" step="50" min="0"/></td>
+      <td class="num"><div class="cell-actions"><button class="btn icon danger" onclick="delRow(this)">🗑</button></div></td>`;
+    els.otherBody.appendChild(tr);
+    tr.querySelectorAll("input").forEach(inp=> inp.addEventListener("input",update));
     update();
-  </script>
+  }
+  function delRow(btn){ btn.closest("tr").remove(); update(); }
+  window.addRow=addRow; window.delRow=delRow;
+
+  // Sync down vs downPct
+  function syncDown(){
+    const price=+els.price.value||0;
+    if(document.activeElement===els.down){
+      const pctVal=price>0?(+els.down.value/price*100):0;
+      els.downPct.value=isFinite(pctVal)?pctVal.toFixed(1):"0.0";
+    }else if(document.activeElement===els.downPct){
+      const pctVal=clamp(+els.downPct.value||0,0,100);
+      els.down.value=Math.round(price*pctVal/100);
+    }
+  }
+
+  // Suggested KALP
+  function calcSuggestedKalp(){ const baseAdults=13000, perChild=2000; const n=+els.childrenCount.value||0; return baseAdults+perChild*n; }
+
+  // Affordability summary
+  function setAffordability({loan, ltv, net, rateBank, bankRateMonthly, amortMonthly, fee, kalp, leftBank, leftReal}){
+    let badgeClass='ok', label='OK';
+    if (leftBank < 12000){ badgeClass='risk'; label='Risk'; }
+    else if (leftBank < 17000){ badgeClass='mid'; label='På gränsen'; }
+    els.affordBadge.className=`badge ${badgeClass}`;
+    els.affordBadge.textContent=label;
+
+    // Översikt values
+    els.a_net.textContent = money(net); els.a_ltv.textContent = (isNaN(ltv)? "–" : ltv.toFixed(1)+"%");
+    els.a_left_bank.textContent = money(leftBank); els.a_left_real.textContent = money(leftReal);
+
+    // Status chip mirrors badge
+    els.statusChip.className = `status-chip ${badgeClass}`;
+    els.statusText.textContent = label;
+
+    // Bank calc table
+    els.a_rate_bank_pct.textContent = (rateBank*100).toFixed(1)+"%";
+    els.a_rate_bank.textContent = money(bankRateMonthly);
+    els.a_amort_pct.textContent = (loan>0 ? (amortMonthly*12/loan*100).toFixed(2) : "0.00")+"%";
+    els.a_amort.textContent = money(amortMonthly);
+    els.a_fee.textContent = money(fee);
+    els.a_kalp.textContent = money(kalp);
+    const totalKalp = bankRateMonthly + amortMonthly + fee + kalp;
+    els.a_total_kalp.textContent = money(totalKalp);
+    els.a_net_2.textContent = money(net);
+    els.a_left_bank_2.textContent = money(leftBank);
+
+    els.a_reason_text.textContent =
+      `Bedömning: ${label}. Netto ${money(net)} − [ränta ${money(bankRateMonthly)} + amort ${money(amortMonthly)} + avgift ${money(fee)} + schablon ${money(kalp)}] = ${money(leftBank)}.`;
+
+    // Sensitivity
+    const lo = Math.max(0, rateBank - 0.01), hi = rateBank + 0.01;
+    const rLo = loan*lo/12, rMid = bankRateMonthly, rHi = loan*hi/12;
+    const leftLo = net - (rLo + amortMonthly + fee + kalp);
+    const leftMid = leftBank;
+    const leftHi = net - (rHi + amortMonthly + fee + kalp);
+    els.sens_lo_pct.textContent = (lo*100).toFixed(1)+"%";
+    els.sens_mid_pct.textContent = (rateBank*100).toFixed(1)+"%";
+    els.sens_hi_pct.textContent = (hi*100).toFixed(1)+"%";
+    els.sens_lo_left.textContent = money(leftLo);
+    els.sens_mid_left.textContent = money(leftMid);
+    els.sens_hi_left.textContent = money(leftHi);
+  }
+
+  // Update all
+  function update(){
+    syncDown();
+    const price=+els.price.value||0;
+    let down=+els.down.value||0;
+    const minDown=Math.round(price*0.10);
+    if(down<minDown){ down=minDown; els.down.value=down; els.downPct.value=10.0.toFixed(1); }
+
+    const loan=Math.max(0,price-down);
+    const ltv=price>0?(loan/price*100):0;
+
+    const netO=+els.incomeOmar.value||0;
+    const netS=+els.incomeSureyya.value||0;
+    const net=netO+netS;
+
+    const fee=+els.fee.value||0;
+    const rate=(+els.rate.value||0)/100;
+    const rateBank=(+els.rateBank.value||0)/100;
+
+    const autoAmort=amortPctByRule(ltv);
+    const amortPct=els.amortManual.value===""?autoAmort:(+els.amortManual.value||0);
+    els.amortRuleHint.textContent=`Auto enligt regel: ${autoAmort.toFixed(2)}%`;
+
+    const kalpSuggested=calcSuggestedKalp();
+    els.kalpSuggestion.innerHTML=`Föreslaget: ${money(kalpSuggested)}`;
+    const kalp = +els.kalp.value || kalpSuggested;
+    if(!els.kalp.value) els.kalp.value=kalpSuggested;
+
+    // Chips
+    els.chipPrice.innerHTML=money(price);
+    els.chipDown.innerHTML=money(down);
+    els.chipDownPct.textContent=pct((down/Math.max(price,1))*100);
+    els.chipLoan.innerHTML=money(loan);
+    els.chipLtv.textContent=pct(ltv);
+    els.chipNet.textContent=money(net).replace(" kr","")+"/mån";
+    els.chipRate.textContent=(rate*100).toFixed(2)+"%";
+    els.chipAmort.textContent=(els.amortManual.value===""?"Auto":(amortPct.toFixed(2)+"%"));
+
+    // Verklig kalkyl
+    const rateMonthly=loan*rate/12;
+    const amortMonthly=loan*(amortPct/100)/12;
+    const housing=rateMonthly+amortMonthly+fee;
+    const other=sumOther();
+
+    els.rateDesc.textContent=`${(loan/1_000_000).toLocaleString('sv-SE',{maximumFractionDigits:1})} Mkr × ${(rate*100).toFixed(2)} % ÷ 12`;
+    els.amortDesc.textContent=`${(loan/1_000_000).toLocaleString('sv-SE',{maximumFractionDigits:1})} Mkr × ${amortPct.toFixed(2)} % ÷ 12`;
+    els.rateMonthly.textContent=money(rateMonthly);
+    els.amortMonthly.textContent=money(amortMonthly);
+    els.feeMonthly.textContent=money(fee);
+    els.housingTotal.textContent=money(housing);
+
+    els.sumOmar.textContent=money(netO);
+    els.sumSureyya.textContent=money(netS);
+    els.sumIncome.textContent=money(net);
+    els.sumHousing.textContent=money(housing);
+    els.sumOther.textContent=money(other);
+    const leftReal=net-housing-other;
+    els.leftover.textContent=money(leftReal);
+    colorize(els.leftover,leftReal);
+
+    // Bank KALP
+    const bankRateMonthly=loan*rateBank/12;
+    const bankHousing=bankRateMonthly+amortMonthly+fee;
+    els.rateDescBank.textContent=`${(loan/1_000_000).toLocaleString('sv-SE',{maximumFractionDigits:1})} Mkr × ${(rateBank*100).toFixed(2)} % ÷ 12`;
+    els.bankRateMonthly.textContent=money(bankRateMonthly);
+    els.bankAmortMonthly.textContent=money(amortMonthly);
+    els.bankFeeMonthly.textContent=money(fee);
+    els.bankKalpMonthly.textContent=money(kalp);
+    const leftBank=net-bankHousing-kalp;
+    els.leftoverBank.textContent=money(leftBank);
+    colorize(els.leftoverBank,leftBank);
+
+    // Övrigt
+    els.otherTotal.innerHTML=money(other);
+    rebuildOtherBreakdown();
+
+    // Afford
+    setAffordability({ loan, ltv, net, rateBank, bankRateMonthly, amortMonthly, fee, kalp, leftBank, leftReal });
+  }
+
+  els.applySuggestion.addEventListener("click", ()=>{ els.kalp.value=calcSuggestedKalp(); update(); });
+
+  function resetDefaults(){
+    els.price.value=3200000; els.down.value=400000; els.downPct.value=12.5;
+    els.incomeOmar.value=34000; els.incomeSureyya.value=27000; els.childrenCount.value=1;
+    els.fee.value=6500; els.rate.value=4.0; els.rateBank.value=7.0; els.kalp.value=15000; els.amortManual.value="";
+    els.otherBody.innerHTML=`
+      <tr><td><input type="text" value="Mat &amp; hushåll"/></td><td class="num"><input type="number" value="9000" step="100" min="0"/></td><td class="num"><div class="cell-actions"><button class="btn icon danger" onclick="delRow(this)">🗑</button></div></td></tr>
+      <tr><td><input type="text" value="Bil"/></td><td class="num"><input type="number" value="3000" step="100" min="0"/></td><td class="num"><div class="cell-actions"><button class="btn icon danger" onclick="delRow(this)">🗑</button></div></td></tr>
+      <tr><td><input type="text" value="Barnkostnader"/></td><td class="num"><input type="number" value="4000" step="100" min="0"/></td><td class="num"><div class="cell-actions"><button class="btn icon danger" onclick="delRow(this)">🗑</button></div></td></tr>
+      <tr><td><input type="text" value="Försäkringar &amp; abonnemang"/></td><td class="num"><input type="number" value="2000" step="50" min="0"/></td><td class="num"><div class="cell-actions"><button class="btn icon danger" onclick="delRow(this)">🗑</button></div></td></tr>
+      <tr><td><input type="text" value="Kläder &amp; nöjen vuxna"/></td><td class="num"><input type="number" value="3000" step="100" min="0"/></td><td class="num"><div class="cell-actions"><button class="btn icon danger" onclick="delRow(this)">🗑</button></div></td></tr>
+      <tr><td><input type="text" value="Resor / sparbuffert"/></td><td class="num"><input type="number" value="3000" step="100" min="0"/></td><td class="num"><div class="cell-actions"><button class="btn icon danger" onclick="delRow(this)">🗑</button></div></td></tr>`;
+    els.otherBody.querySelectorAll("input").forEach(inp=> inp.addEventListener("input", update));
+    update(); window.scrollTo({top:0,behavior:"smooth"});
+  }
+
+  // Bind
+  ["price","down","downPct","incomeOmar","incomeSureyya","childrenCount","fee","rate","rateBank","kalpSchablon","amort"]
+    .forEach(id=> document.getElementById(id).addEventListener("input", update));
+  document.querySelectorAll("#otherBody input").forEach(inp=> inp.addEventListener("input", update));
+
+  update(); // init
+</script>
 </body>
 </html>
