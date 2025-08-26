@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>KALP – Bostadsköp (Omar & Süreyya)</title>
+<title>KALP – Bostadsköp</title>
 <style>
   :root{
     --bg:#f6f8fc; --card:#ffffff; --ink:#1b1e28; --muted:#667085;
@@ -141,7 +141,7 @@
 <div class="wrap">
   <section class="header">
     <h1 class="title">KALP – Bostadsköp</h1>
-    <p class="subtitle">Omar &amp; Süreyya — 2 vuxna + barn — Minst 10% insats</p>
+    <p class="subtitle">Omar &amp; Süreyya &amp; Mikail — 2 vuxna + 1 barn — Minst 10% insats</p>
     <div class="chips">
       <span class="chip">Bostadspris: <strong id="chip-price">3&nbsp;200&nbsp;000 kr</strong></span>
       <span class="chip">Insats: <strong id="chip-down">400&nbsp;000 kr</strong> (<span id="chip-down-pct">12,5%</span>)</span>
@@ -246,13 +246,13 @@
           </div>
           <div>
             <label>Kontantinsats (kr)</label>
-            <input type="number" id="down" value="400000" step="10000" min="0"/>
+            <input type="number" id="down" value="320000" step="10000" min="0"/>
           </div>
         </div>
         <div class="row">
           <div>
-            <label>…eller kontantinsats (%)</label>
-            <input type="number" id="downPct" value="12.5" step="0.1" min="0" max="100"/>
+            <label>eller kontantinsats (%)</label>
+            <input type="number" id="downPct" value="10" step="1" min="0" max="100"/>
           </div>
           <div></div>
         </div>
@@ -263,11 +263,11 @@
         <div class="row">
           <div>
             <label>Omar – lön (netto kr/mån)</label>
-            <input type="number" id="incomeOmar" value="34000" step="500" min="0"/>
+            <input type="number" id="incomeOmar" value="35000" step="500" min="0"/>
           </div>
           <div>
             <label>Süreyya – lön (netto kr/mån)</label>
-            <input type="number" id="incomeSureyya" value="27000" step="500" min="0"/>
+            <input type="number" id="incomeSureyya" value="28000" step="500" min="0"/>
           </div>
         </div>
       </div>
@@ -401,6 +401,66 @@
 </div>
 
 <script>
+  // ---------- Persistence ----------
+  const STATE_KEY = "KALP_STATE_V1";
+
+  function saveState(){
+    const rows = Array.from(document.querySelectorAll("#otherBody tr")).map(tr => ({
+      name: tr.querySelector('td:nth-child(1) input')?.value ?? "",
+      value: +(tr.querySelector('td:nth-child(2) input')?.value ?? 0)
+    }));
+    const state = {
+      price:+q("price").value||0,
+      down:+q("down").value||0,
+      downPct:+q("downPct").value||0,
+      incomeOmar:+q("incomeOmar").value||0,
+      incomeSureyya:+q("incomeSureyya").value||0,
+      childrenCount:+q("childrenCount").value||0,
+      fee:+q("fee").value||0,
+      rate:+q("rate").value||0,
+      rateBank:+q("rateBank").value||0,
+      kalp:+q("kalpSchablon").value||0,
+      amort:q("amort").value === "" ? "" : +q("amort").value,
+      otherRows: rows,
+      _ts: Date.now()
+    };
+    try{ localStorage.setItem(STATE_KEY, JSON.stringify(state)); }catch(e){}
+  }
+  function loadState(){
+    try{
+      const raw = localStorage.getItem(STATE_KEY);
+      if(!raw) return false;
+      const s = JSON.parse(raw);
+      if (typeof s !== "object" || s === null) return false;
+
+      q("price").value = s.price ?? 3200000;
+      q("down").value = s.down ?? 320000;
+      q("downPct").value = s.downPct ?? 10;
+      q("incomeOmar").value = s.incomeOmar ?? 34000;
+      q("incomeSureyya").value = s.incomeSureyya ?? 27000;
+      q("childrenCount").value = s.childrenCount ?? 1;
+      q("fee").value = s.fee ?? 6500;
+      q("rate").value = s.rate ?? 4.0;
+      q("rateBank").value = s.rateBank ?? 7.0;
+      q("kalpSchablon").value = s.kalp ?? 15000;
+      q("amort").value = (s.amort === "" ? "" : (s.amort ?? ""));
+
+      if (Array.isArray(s.otherRows) && s.otherRows.length){
+        const tbody = q("otherBody");
+        tbody.innerHTML = "";
+        s.otherRows.forEach(r=>{
+          const tr=document.createElement("tr");
+          tr.innerHTML=`<td><input type="text" value="${(r.name??"").replace(/"/g,"&quot;")}"/></td>
+            <td class="num"><input type="number" value="${+r.value||0}" step="50" min="0"/></td>
+            <td class="num"><div class="cell-actions"><button class="btn icon danger" onclick="delRow(this)">🗑</button></div></td>`;
+          tbody.appendChild(tr);
+        });
+      }
+      return true;
+    }catch(e){ return false; }
+  }
+  function clearState(){ try{ localStorage.removeItem(STATE_KEY); }catch(e){} }
+
   // ---------- Helpers ----------
   const money = n => (isNaN(n) ? "–" : Math.round(n).toLocaleString('sv-SE') + " kr");
   const pct = n => (isNaN(n) ? "–" : n.toFixed(1) + "%");
@@ -409,7 +469,7 @@
   function amortPctByRule(ltv){ if (ltv > 70) return 2.0; if (ltv > 50) return 1.0; return 0.0; }
   function colorize(el, val){ el.classList.remove("good","warn","bad"); if (val>=17000) el.classList.add("good"); else if (val>=15000) el.classList.add("warn"); else el.classList.add("bad"); }
 
-  // Elements
+  // Elements (cached)
   const els = {
     price:q("price"), down:q("down"), downPct:q("downPct"),
     incomeOmar:q("incomeOmar"), incomeSureyya:q("incomeSureyya"),
@@ -432,7 +492,6 @@
     otherBody:q("otherBody"), otherTotal:q("otherTotal"),
     otherBreakdownBody:q("otherBreakdownBody"),
     affordBadge:q("affordBadge"),
-    // Afford IDs
     a_net:q("a_net"), a_ltv:q("a_ltv"), a_left_bank:q("a_left_bank"), a_left_real:q("a_left_real"),
     a_rate_bank_pct:q("a_rate_bank_pct"), a_rate_bank:q("a_rate_bank"),
     a_amort_pct:q("a_amort_pct"), a_amort:q("a_amort"),
@@ -444,7 +503,7 @@
     statusChip:q("statusChip"), statusText:q("statusText")
   };
 
-  // Other expenses
+  // Other expenses helpers
   function sumOther(){ let s=0; els.otherBody.querySelectorAll("input[type='number']").forEach(i=> s += (+i.value||0)); return s; }
   function rebuildOtherBreakdown(){
     const rows = Array.from(els.otherBody.querySelectorAll("tr"));
@@ -463,10 +522,10 @@
       <td class="num"><input type="number" value="0" step="50" min="0"/></td>
       <td class="num"><div class="cell-actions"><button class="btn icon danger" onclick="delRow(this)">🗑</button></div></td>`;
     els.otherBody.appendChild(tr);
-    tr.querySelectorAll("input").forEach(inp=> inp.addEventListener("input",update));
-    update();
+    tr.querySelectorAll("input").forEach(inp=> inp.addEventListener("input", onUserEdit));
+    update(); saveState();
   }
-  function delRow(btn){ btn.closest("tr").remove(); update(); }
+  function delRow(btn){ btn.closest("tr").remove(); update(); saveState(); }
   window.addRow=addRow; window.delRow=delRow;
 
   // Sync down vs downPct
@@ -492,15 +551,12 @@
     els.affordBadge.className=`badge ${badgeClass}`;
     els.affordBadge.textContent=label;
 
-    // Översikt values
     els.a_net.textContent = money(net); els.a_ltv.textContent = (isNaN(ltv)? "–" : ltv.toFixed(1)+"%");
     els.a_left_bank.textContent = money(leftBank); els.a_left_real.textContent = money(leftReal);
 
-    // Status chip mirrors badge
     els.statusChip.className = `status-chip ${badgeClass}`;
     els.statusText.textContent = label;
 
-    // Bank calc table
     els.a_rate_bank_pct.textContent = (rateBank*100).toFixed(1)+"%";
     els.a_rate_bank.textContent = money(bankRateMonthly);
     els.a_amort_pct.textContent = (loan>0 ? (amortMonthly*12/loan*100).toFixed(2) : "0.00")+"%";
@@ -515,7 +571,6 @@
     els.a_reason_text.textContent =
       `Bedömning: ${label}. Netto ${money(net)} − [ränta ${money(bankRateMonthly)} + amort ${money(amortMonthly)} + avgift ${money(fee)} + schablon ${money(kalp)}] = ${money(leftBank)}.`;
 
-    // Sensitivity
     const lo = Math.max(0, rateBank - 0.01), hi = rateBank + 0.01;
     const rLo = loan*lo/12, rMid = bankRateMonthly, rHi = loan*hi/12;
     const leftLo = net - (rLo + amortMonthly + fee + kalp);
@@ -529,7 +584,7 @@
     els.sens_hi_left.textContent = money(leftHi);
   }
 
-  // Update all
+  // Update all UI
   function update(){
     syncDown();
     const price=+els.price.value||0;
@@ -605,33 +660,39 @@
     els.otherTotal.innerHTML=money(other);
     rebuildOtherBreakdown();
 
-    // Afford
+    // Afford summary + SAVE
     setAffordability({ loan, ltv, net, rateBank, bankRateMonthly, amortMonthly, fee, kalp, leftBank, leftReal });
   }
 
-  els.applySuggestion.addEventListener("click", ()=>{ els.kalp.value=calcSuggestedKalp(); update(); });
+  // On any user edit -> update + save
+  function onUserEdit(){ update(); saveState(); }
+
+  els.applySuggestion.addEventListener("click", ()=>{ els.kalp.value=calcSuggestedKalp(); onUserEdit(); });
 
   function resetDefaults(){
-    els.price.value=3200000; els.down.value=400000; els.downPct.value=12.5;
-    els.incomeOmar.value=34000; els.incomeSureyya.value=27000; els.childrenCount.value=1;
-    els.fee.value=6500; els.rate.value=4.0; els.rateBank.value=7.0; els.kalp.value=15000; els.amortManual.value="";
-    els.otherBody.innerHTML=`
+    clearState();
+    q("price").value=3200000; q("down").value=32000; q("downPct").value=10;
+    q("incomeOmar").value=34000; q("incomeSureyya").value=27000; q("childrenCount").value=1;
+    q("fee").value=6500; q("rate").value=4.0; q("rateBank").value=7.0; q("kalpSchablon").value=15000; q("amort").value="";
+    q("otherBody").innerHTML=`
       <tr><td><input type="text" value="Mat &amp; hushåll"/></td><td class="num"><input type="number" value="9000" step="100" min="0"/></td><td class="num"><div class="cell-actions"><button class="btn icon danger" onclick="delRow(this)">🗑</button></div></td></tr>
       <tr><td><input type="text" value="Bil"/></td><td class="num"><input type="number" value="3000" step="100" min="0"/></td><td class="num"><div class="cell-actions"><button class="btn icon danger" onclick="delRow(this)">🗑</button></div></td></tr>
       <tr><td><input type="text" value="Barnkostnader"/></td><td class="num"><input type="number" value="4000" step="100" min="0"/></td><td class="num"><div class="cell-actions"><button class="btn icon danger" onclick="delRow(this)">🗑</button></div></td></tr>
       <tr><td><input type="text" value="Försäkringar &amp; abonnemang"/></td><td class="num"><input type="number" value="2000" step="50" min="0"/></td><td class="num"><div class="cell-actions"><button class="btn icon danger" onclick="delRow(this)">🗑</button></div></td></tr>
       <tr><td><input type="text" value="Kläder &amp; nöjen vuxna"/></td><td class="num"><input type="number" value="3000" step="100" min="0"/></td><td class="num"><div class="cell-actions"><button class="btn icon danger" onclick="delRow(this)">🗑</button></div></td></tr>
       <tr><td><input type="text" value="Resor / sparbuffert"/></td><td class="num"><input type="number" value="3000" step="100" min="0"/></td><td class="num"><div class="cell-actions"><button class="btn icon danger" onclick="delRow(this)">🗑</button></div></td></tr>`;
-    els.otherBody.querySelectorAll("input").forEach(inp=> inp.addEventListener("input", update));
-    update(); window.scrollTo({top:0,behavior:"smooth"});
+    document.querySelectorAll("#otherBody input").forEach(inp=> inp.addEventListener("input", onUserEdit));
+    update(); saveState(); window.scrollTo({top:0,behavior:"smooth"});
   }
 
-  // Bind
+  // Bind all inputs to auto-save
   ["price","down","downPct","incomeOmar","incomeSureyya","childrenCount","fee","rate","rateBank","kalpSchablon","amort"]
-    .forEach(id=> document.getElementById(id).addEventListener("input", update));
-  document.querySelectorAll("#otherBody input").forEach(inp=> inp.addEventListener("input", update));
+    .forEach(id=> document.getElementById(id).addEventListener("input", onUserEdit));
+  document.querySelectorAll("#otherBody input").forEach(inp=> inp.addEventListener("input", onUserEdit));
 
-  update(); // init
+  // Load saved state (if any) then init
+  loadState();
+  update();
 </script>
 </body>
 </html>
