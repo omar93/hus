@@ -106,26 +106,55 @@
   .mini-compact thead th{text-align:center}
 
   /* Print: keep EACH top-level section whole (no splitting across pages) */
-  @media print {
-    @page { size: A4; margin: 12mm; }
-    html, body { background:#fff !important; color:#000 !important; }
+@media print {
+  /* Page box */
+  @page { size: A4; margin: 12mm; }
+
+  /* Make the layout fluid for print */
+  html, body {
+    background:#fff !important; color:#000 !important;
     -webkit-print-color-adjust: exact; print-color-adjust: exact;
-
-    .grid { grid-template-columns: 1fr !important; gap: 12px !important; }
-    .topbar, .btn, .tfootbar .right { display: none !important; }
-
-    /* Keep every section intact; if too tall it moves to the next page */
-    .header, .afford--grid, .card, .section { 
-      break-inside: avoid; page-break-inside: avoid; 
-      background:#fff !important; border:1px solid #bbb !important; box-shadow:none !important;
-    }
-
-    table { break-inside: auto; page-break-inside: auto; }
-    thead { display: table-header-group; }
-    tfoot { display: table-footer-group; }
-    tbody tr { break-inside: avoid; page-break-inside: avoid; }
-    #otherBody tr { break-inside: avoid; page-break-inside: avoid; }
   }
+
+  /* One column in print, consistent padding */
+  .wrap { max-width:none !important; padding:0 6mm !important; margin:0 !important; }
+  .grid { grid-template-columns: 1fr !important; gap: 10px !important; }
+
+  /* Do not split sections across pages */
+  .header, .afford--grid, .card, .section {
+    break-inside: avoid; page-break-inside: avoid;
+    background:#fff !important; border:1px solid #bbb !important; box-shadow:none !important;
+  }
+
+  /* This is the key: stack the 3 panels to avoid right overflow */
+  .afford--grid {
+    grid-template-columns: 1fr !important;   /* was 1fr 1fr 1fr */
+    gap: 8px !important;
+    padding: 8px !important;
+    width: 100% !important;
+  }
+  .afford-bar { padding:6px 8px !important; }
+
+  /* Tighter panels/tables so content fits A4 */
+  .panel { padding:8px !important; }
+  .panel-title { padding:6px 8px !important; font-size:12.5px !important; }
+  .mini { table-layout: fixed; }               /* prevent wide cells from pushing width */
+  .mini td, .mini th { padding:6px 8px !important; font-size:12.5px !important; word-break: break-word; }
+
+  /* Make chips smaller and avoid wrapping out of page */
+  .chips { gap:4px !important; }
+  .chip { font-size:11px !important; padding:3px 6px !important; }
+
+  /* Hide interactive chrome */
+  .topbar, .btn, .tfootbar .right { display:none !important; }
+
+  /* Keep table headers/footers repeating correctly */
+  table { break-inside:auto; page-break-inside:auto; }
+  thead { display: table-header-group; }
+  tfoot { display: table-footer-group; }
+  tbody tr { break-inside: avoid; page-break-inside: avoid; }
+  #otherBody tr { break-inside: avoid; page-break-inside: avoid; }
+}
 </style>
 </head>
 <body>
